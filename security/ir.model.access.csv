@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_product_template_read_all,product.template.read.all,product.model_product_template,,1,0,0,0
+access_product_template_write_configurador,product.template.write.configurador,product.model_product_template,eco_pricing_margen.group_configurador_precios,1,1,0,0
+

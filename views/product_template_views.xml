@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_product_template_form_eco_pricing" model="ir.ui.view">
+        <field name="name">product.template.form.eco.pricing</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Precios por canal">
+                    <group>
+                        <field name="standard_price" readonly="1"/>
+                    </group>
+                    <group string="T.A.T">
+                        <field name="x_margin_tat" groups="eco_pricing_margen.group_configurador_precios"/>
+                        <field name="x_price_tat_sin_iva" readonly="1"/>
+                        <field name="x_price_tat_con_iva" readonly="1"/>
+                    </group>
+                    <group string="Mayorista">
+                        <field name="x_margin_mayorista" groups="eco_pricing_margen.group_configurador_precios"/>
+                        <field name="x_price_mayorista_sin_iva" readonly="1"/>
+                        <field name="x_price_mayorista_con_iva" readonly="1"/>
+                    </group>
+                    <group string="P.O.S">
+                        <field name="x_margin_pos" groups="eco_pricing_margen.group_configurador_precios"/>
+                        <field name="x_price_pos_sin_iva" readonly="1"/>
+                        <field name="x_price_pos_con_iva" readonly="1"/>
+                    </group>
+                    <group string="Ofertas">
+                        <field name="x_margin_oferta" groups="eco_pricing_margen.group_configurador_precios"/>
+                        <field name="x_price_oferta_sin_iva" readonly="1"/>
+                        <field name="x_price_oferta_con_iva" readonly="1"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+
