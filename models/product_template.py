@@ -130,4 +130,3 @@ class ProductTemplate(models.Model):
             record.x_price_mayorista_con_iva = precio_may_sin * (1 + tax_rate)
             record.x_price_pos_con_iva = precio_pos_sin * (1 + tax_rate)
             record.x_price_oferta_con_iva = precio_oferta_sin * (1 + tax_rate)
-
