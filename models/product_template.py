@@ -1,34 +1,19 @@
-# -*- coding: utf-8 -*-
-
-from odoo import models, fields, api
-
-
-class ProductTemplate(models.Model):
-    _inherit = 'product.template'
-
-    x_margin_tat = fields.Float(string='Margen T.A.T (%)')
-    x_margin_mayorista = fields.Float(string='Margen Mayorista (%)')
-    x_margin_pos = fields.Float(string='Margen P.O.S (%)')
-    x_margin_oferta = fields.Float(string='Margen Ofertas (%)')
-
-    x_price_tat_sin_iva = fields.Float(string='Precio T.A.T sin IVA', compute='_compute_prices', store=False)
-    x_price_tat_con_iva = fields.Float(string='Precio T.A.T con IVA', compute='_compute_prices', store=False)
-    x_price_mayorista_sin_iva = fields.Float(string='Precio Mayorista sin IVA', compute='_compute_prices', store=False)
-    x_price_mayorista_con_iva = fields.Float(string='Precio Mayorista con IVA', compute='_compute_prices', store=False)
-    x_price_pos_sin_iva = fields.Float(string='Precio P.O.S sin IVA', compute='_compute_prices', store=False)
-    x_price_pos_con_iva = fields.Float(string='Precio P.O.S con IVA', compute='_compute_prices', store=False)
-    x_price_oferta_sin_iva = fields.Float(string='Precio Ofertas sin IVA', compute='_compute_prices', store=False)
-    x_price_oferta_con_iva = fields.Float(string='Precio Ofertas con IVA', compute='_compute_prices', store=False)
-
-    @api.depends('standard_price', 'x_margin_tat', 'x_margin_mayorista', 'x_margin_pos', 'x_margin_oferta', 'taxes_id')
+@api.depends('standard_price', 'x_margin_tat', 'x_margin_mayorista', 'x_margin_pos', 'x_margin_oferta', 'taxes_id')
     def _compute_prices(self):
+        """Calculadora dinámica: Costo -> Utilidad -> Precio con IVA"""
         for record in self:
-            record.x_price_tat_sin_iva = 0.0
-            record.x_price_tat_con_iva = 0.0
-            record.x_price_mayorista_sin_iva = 0.0
-            record.x_price_mayorista_con_iva = 0.0
-            record.x_price_pos_sin_iva = 0.0
-            record.x_price_pos_con_iva = 0.0
-            record.x_price_oferta_sin_iva = 0.0
-            record.x_price_oferta_con_iva = 0.0
+            # Obtener tasa de IVA (ej: 0.19)
+            tax_rate = sum(record.taxes_id.mapped('amount')) / 100.0 if record.taxes_id else 0.0
+            
+            # Función de Margen de Contribución: Costo / (1 - %Utilidad)
+            def calc_prices(margin_percent):
+                if margin_percent >= 100: return 0.0, 0.0
+                precio_neto = record.standard_price / (1 - (margin_percent / 100.0))
+                precio_iva = precio_neto * (1 + tax_rate)
+                return precio_neto, precio_iva
 
+            # Asignación a los 4 canales
+            record.x_price_tat_sin_iva, record.x_price_tat_con_iva = calc_prices(record.x_margin_tat)
+            record.x_price_mayorista_sin_iva, record.x_price_mayorista_con_iva = calc_prices(record.x_margin_mayorista)
+            record.x_price_pos_sin_iva, record.x_price_pos_con_iva = calc_prices(record.x_margin_pos)
+            record.x_price_oferta_sin_iva, record.x_price_oferta_con_iva = calc_prices(record.x_margin_oferta)
