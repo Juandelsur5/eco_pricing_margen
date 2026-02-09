@@ -7,6 +7,37 @@ from odoo.exceptions import UserError
 class Pricelist(models.Model):
     _inherit = 'product.pricelist'
 
+    def _get_tax_rate_for_product(self, product, partner=None):
+        """Obtiene la tasa de IVA aplicable al producto considerando la posición fiscal del partner.
+        
+        Args:
+            product: product.product record
+            partner: res.partner record (opcional)
+        
+        Returns:
+            float: Tasa de IVA en decimal (ej: 0.19 para 19%, 0.0 si no aplica)
+        """
+        # Obtener impuestos del producto
+        taxes = product.taxes_id
+        if not taxes:
+            return 0.0
+        
+        # Si hay partner, considerar su posición fiscal
+        if partner:
+            # Obtener posición fiscal del partner
+            fiscal_position = partner.property_account_position_id
+            if fiscal_position:
+                # Mapear impuestos según posición fiscal
+                taxes = fiscal_position.map_tax(taxes)
+        
+        # Buscar la mayor tasa de IVA entre los impuestos aplicables
+        max_tax_rate = 0.0
+        for tax in taxes:
+            if tax.type_tax_use == 'sale' and tax.amount_type == 'percent':
+                max_tax_rate = max(max_tax_rate, tax.amount / 100.0)
+        
+        return max_tax_rate
+
     def _compute_price_rule(self, products_qty_partner, date=False, uom_id=False):
         # Ejecutar primero el motor nativo
         result = super()._compute_price_rule(products_qty_partner, date, uom_id)
@@ -51,10 +82,16 @@ class Pricelist(models.Model):
             if not costo or costo <= 0:
                 continue
 
+            # Calcular precio sin IVA basado en margen
+            # El margen se calcula sobre el precio neto antes de impuestos
             utilidad = margin_value / 100.0
-            precio = costo / (1 - utilidad)
+            precio_sin_iva = costo / (1 - utilidad)
+            
+            # El precio retornado debe ser sin IVA, ya que Odoo aplicará los impuestos
+            # según la posición fiscal del partner en el momento de la venta
+            # Esto permite manejar correctamente responsables y no responsables de IVA
 
             # Respetar contrato del motor de precios
-            result[product_id] = (False, precio)
+            result[product_id] = (False, precio_sin_iva)
 
         return result
